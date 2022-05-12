@@ -24,6 +24,17 @@ function setup()
             '1': [0, 50],
         },
     };
+    let tmp_bdist = fdata['metadata']['pocket_radius'] * (1 / 1.414);
+    fdata['pockets'] = [
+        [-(fdata['metadata']['table_width'] / 2) - tmp_bdist,  (fdata['metadata']['table_height'] / 2) + tmp_bdist],
+        [ (fdata['metadata']['table_width'] / 2) + tmp_bdist,  (fdata['metadata']['table_height'] / 2) + tmp_bdist],
+        [ (fdata['metadata']['table_width'] / 2) + tmp_bdist, -(fdata['metadata']['table_height'] / 2) - tmp_bdist],
+        [-(fdata['metadata']['table_width'] / 2) - tmp_bdist, -(fdata['metadata']['table_height'] / 2) - tmp_bdist],
+        [0,  (fdata['metadata']['table_height'] / 2) + fdata['metadata']['pocket_radius']],
+        [0, -(fdata['metadata']['table_height'] / 2) - fdata['metadata']['pocket_radius']],
+        [ (fdata['metadata']['table_width'] / 2) + fdata['metadata']['pocket_radius'], 0],
+        [-(fdata['metadata']['table_width'] / 2) - fdata['metadata']['pocket_radius'], 0],
+    ];
     colorscheme = {
         'table_cloth': color(14, 204, 65),
         'table_wood': color(127, 87, 22),
@@ -58,17 +69,12 @@ function draw()
     fill(colorscheme['table_cloth']);
     srect(-(fdata['metadata']['table_width'] / 2), -(fdata['metadata']['table_height'] / 2), fdata['metadata']['table_width'], fdata['metadata']['table_height']);
 
-    // drawing the pots
+    // drawing the pockets
     fill('black');
-    let tmp_bdist = fdata['metadata']['pocket_radius'] * (1 / 1.414);
-    scircle(-(fdata['metadata']['table_width'] / 2) - tmp_bdist, -(fdata['metadata']['table_height'] / 2) - tmp_bdist, 2 * fdata['metadata']['pocket_radius']);
-    scircle(+(fdata['metadata']['table_width'] / 2) + tmp_bdist, -(fdata['metadata']['table_height'] / 2) - tmp_bdist, 2 * fdata['metadata']['pocket_radius']);
-    scircle(+(fdata['metadata']['table_width'] / 2) + tmp_bdist, +(fdata['metadata']['table_height'] / 2) + tmp_bdist, 2 * fdata['metadata']['pocket_radius']);
-    scircle(-(fdata['metadata']['table_width'] / 2) - tmp_bdist, +(fdata['metadata']['table_height'] / 2) + tmp_bdist, 2 * fdata['metadata']['pocket_radius']);
-    scircle(0, -(fdata['metadata']['table_height'] / 2) - fdata['metadata']['pocket_radius'], 2 * fdata['metadata']['pocket_radius']);
-    scircle(0, +(fdata['metadata']['table_height'] / 2) + fdata['metadata']['pocket_radius'], 2 * fdata['metadata']['pocket_radius']);
-    scircle(-(fdata['metadata']['table_width'] / 2) - fdata['metadata']['pocket_radius'], 0, 2 * fdata['metadata']['pocket_radius']);
-    scircle(+(fdata['metadata']['table_width'] / 2) + fdata['metadata']['pocket_radius'], 0, 2 * fdata['metadata']['pocket_radius']);
+    fdata['pockets'].forEach((pocket) =>
+    {
+        scircle(pocket[0], pocket[1], 2 * fdata['metadata']['pocket_radius']);
+    });
 
     // drawing the balls
     objdata.forEach((obj) =>

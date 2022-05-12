@@ -11,7 +11,7 @@ def home_page():
 def getFrame():
     req = request.get_json()
     pt = PoolTable(req['data'])
-    pt.calculateMoves()
+    pt.calculatePaths()
     resp = {'frame': pt.getFrame()}
     return jsonify(resp), 200
 
