@@ -12,3 +12,6 @@ class Line:
             x2 = str(round(self.x2, 3)),
             y2 = str(round(self.y2, 3)),
         )
+
+    def toList(self):
+        return [self.x1, self.y1, self.x2, self.y2]

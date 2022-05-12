@@ -1,7 +1,7 @@
 let cx, cy;
 let gscale;
 let fdata;
-let objdata;
+let pathdata;
 let colorscheme;
 
 function setup()
@@ -49,11 +49,18 @@ function setup()
             '7': 'maroon',
             '8': 'black',
         },
+        'line': [
+            'red',
+            'blue',
+            'black',
+            'purple',
+            'white',
+        ],
     };
-    objdata = [];
-    postData('/getframe', {'data': fdata})
+    pathdata = [];
+    postData('/getpaths', {'frame_data': fdata})
         .then((resp) => {
-            objdata = resp['frame'];
+            pathdata = resp['paths'];
         });
 }
 
@@ -72,45 +79,58 @@ function draw()
     // drawing the pockets
     fill('black');
     fdata['pockets'].forEach((pocket) =>
-    {
-        scircle(pocket[0], pocket[1], 2 * fdata['metadata']['pocket_radius']);
-    });
+        {
+            scircle(pocket[0], pocket[1], 2 * fdata['metadata']['pocket_radius']);
+        });
 
     // drawing the balls
-    objdata.forEach((obj) =>
+    for(var ball in fdata['balls'])
+    {
+        if(int(ball) > 8)
         {
-            if(obj['type'] == 'ball')
+            fill(colorscheme['ball'][str(int(ball) - 8)]);
+            scircle(fdata['balls'][ball][0], -fdata['balls'][ball][1], 2 * fdata['metadata']['ball_radius']);
+            if(ball == '9')
+                fill('black');
+            else
+                fill('white');
+            scircle(fdata['balls'][ball][0], -fdata['balls'][ball][1], fdata['metadata']['ball_radius']);
+        }
+        else
+        {
+            fill(colorscheme['ball'][ball]);
+            scircle(fdata['balls'][ball][0], -fdata['balls'][ball][1], 2 * fdata['metadata']['ball_radius']);
+            if(ball == '0')
             {
-                if(int(obj['name']) > 8)
-                {
-                    fill(colorscheme['ball'][str(int(obj['name']) - 8)]);
-                    scircle(obj['x'], -obj['y'], 2 * obj['radius']);
-                    if(obj['name'] == '9')
-                        fill('black');
-                    else
-                        fill('white');
-                    scircle(obj['x'], -obj['y'], obj['radius']);
-                }
-                else
-                {
-                    fill(colorscheme['ball'][obj['name']]);
-                    scircle(obj['x'], -obj['y'], 2 * obj['radius']);
-                    if(obj['name'] == '0')
-                    {
-                        fill('red');
-                        scircle(obj['x'], -obj['y'], obj['radius'] / 2);
-                    }
-                }
-            }
-            else if(obj['type'] == 'line')
-            {
-                stroke(obj['color']);
-                strokeWeight(gscale + 1);
-                noFill();
-                sline(obj['x1'], -obj['y1'], obj['x2'], -obj['y2']);
+                fill('red');
+                scircle(fdata['balls'][ball][0], -fdata['balls'][ball][1], fdata['metadata']['ball_radius'] / 2);
             }
         }
+    }
+
+    // drawing the paths
+    strokeWeight(gscale + 1);
+    noFill();
+    pathdata.forEach((path) =>
+        {
+            stroke(getRandomColor());
+            path.forEach((line) =>
+                {
+                    sline(line[0], -line[1], line[2], -line[3]);
+                }
+            );
+        }
     );
+
+    // stopping the loop after receiving data
+    if(pathdata.length > 0)
+        noLoop();
+}
+
+function getRandomColor()
+{
+    let ind = int(Math.random() * colorscheme['line'].length);
+    return colorscheme['line'][ind];
 }
 
 function sline(x1, y1, x2, y2)

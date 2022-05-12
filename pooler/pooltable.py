@@ -16,6 +16,7 @@ class PoolTable:
         for ball in self.balls.keys():
             if(ball != '0'):
                 self.paths += self.calculatePathsForBall(ball)
+                break
 
     def calculatePathsForBall(self, ball):
         tpaths = []
@@ -23,20 +24,30 @@ class PoolTable:
             cpath = self.calculatePathSTP(self.cue, self.balls[ball], pocket)
             if(len(cpath) > 0):
                 tpaths.append(cpath)
+            break
         return tpaths
 
     def calculatePathSTP(self, source, target, pocket):
         # print(source, '->', target, '->', pocket)
-        lines = [Line(0, 0, 0, 40), Line(40, 0, 0, 40)]
+        lines = [
+                Line(source[0], source[1], target[0], target[1]),
+                Line(target[0], target[1], pocket[0], pocket[1]),
+                ]
         return lines
 
-    def getFrame(self):
-        frame = []
-        for ball, coord in self.balls.items():
-            frame.append({'type': 'ball', 'name': ball, 'x': coord[0], 'y': coord[1], 'radius': self.ball_radius})
-        line_colors = ['red', 'blue', 'black', 'purple', 'white']
+    def getPaths(self):
+        tpaths = []
         for path in self.paths:
-            cur_color = random.choice(line_colors)
+            cpath = []
             for line in path:
-                frame.append({'type': 'line', 'color': cur_color, 'x1': line.x1, 'y1': line.y1, 'x2': line.x2, 'y2': line.y2})
-        return frame
+                cpath.append(line.toList())
+            tpaths.append(cpath)
+        return tpaths
+
+    def getLines(self):
+        tpaths = self.getPaths()
+        tlines = []
+        for path in tpaths:
+            tlines += path
+        return tlines
+
