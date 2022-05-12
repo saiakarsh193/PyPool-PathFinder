@@ -1,5 +1,5 @@
-from pooler.line import Line
-import random
+from pooler.vector import Vector
+from pooler.point import Point
 
 class PoolTable:
     def __init__(self, data):
@@ -8,7 +8,11 @@ class PoolTable:
         self.table_width = data['metadata']['table_width']
         self.table_height = data['metadata']['table_height']
         self.balls = data['balls']
+        for ball, value in self.balls.items():
+            self.balls[ball] = Point(value)
         self.pockets = data['pockets']
+        for pocket, value in enumerate(self.pockets):
+            self.pockets[pocket] = Point(value)
         self.cue = self.balls['0']
         self.paths = []
 
@@ -30,8 +34,8 @@ class PoolTable:
     def calculatePathSTP(self, source, target, pocket):
         # print(source, '->', target, '->', pocket)
         lines = [
-                Line(source[0], source[1], target[0], target[1]),
-                Line(target[0], target[1], pocket[0], pocket[1]),
+                Vector(source, target),
+                Vector(target, pocket),
                 ]
         return lines
 
