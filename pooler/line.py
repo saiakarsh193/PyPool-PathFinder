@@ -8,8 +8,8 @@ class Line:
 
     def __str__(self):
         return 'Line[{a} -> {b}]'.format(
-            a = str(self.a),
-            b = str(self.b)
+            a = self.a,
+            b = self.b
         )
 
     def toList(self):

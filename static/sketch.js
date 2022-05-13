@@ -21,7 +21,10 @@ function setup()
         'balls':
         {
             '0': [0, 0],
-            '1': [0, 50],
+            '1': [-20, 70],
+            '2': [0, 50],
+            '3': [-100, 80],
+            '4': [20, 40],
         },
     };
     let tmp_bdist = fdata['metadata']['pocket_radius'] * (1 / 1.414);
@@ -109,7 +112,7 @@ function draw()
     }
 
     // drawing the paths
-    strokeWeight(gscale + 1);
+    strokeWeight(gscale);
     noFill();
     pathdata.forEach((path) =>
         {
