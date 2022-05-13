@@ -37,24 +37,8 @@ class PoolTable:
         self.total_addchild = 1
         self.total_endps = 0
 
-    def calculatePaths(self):
-        self.proots = []
-        for pocket in self.pockets.keys():
-            self.proots.append(self.calculateRootForPocket(pocket))
-        print('Total children calculated:', self.total_addchild)
-
-    def calculateRootForPocket(self, pocket):
-        rootpoint = TP(self.getPocketTP(pocket), pocket, None, 0, [])
-        for ball in self.balls.keys():
-            if(ball != self.cue):
-                rootpoint.addChild(self.calculateAttackPoint(self.balls[ball], rootpoint.point), ball)
-                self.total_addchild += 1
-        for child in rootpoint.children:
-            self.calculateTPChildren(child)
-        # self.printTP(rootpoint)
-        return rootpoint
-
     def printTP(self, rootp):
+        # for printing the TP tree wrt as cur and child pairs
         print('cur:', rootp)
         print('chilren:')
         for child in rootp.children:
@@ -63,21 +47,72 @@ class PoolTable:
         for child in rootp.children:
             self.printTP(child)
 
-    def calculateTPChildren(self, tp):
+    def calculatePaths(self):
+        # calculate the root target point for each pocket
+        # the root is a DAG that has all the shots for that pocket
+        # for choosing the valid shots, we only choose those ending with the cue ball
+        self.proots = []
+        for pocket in self.pockets.keys():
+            # get the root TP of pocket
+            self.proots.append(self.calculateRootForPocket(pocket))
+            break
+        print('Total children calculated:', self.total_addchild)
+
+    def calculateRootForPocket(self, pocket):
+        # the TP for pocket is not centre but with offset such that the it coincides with the table edge
+        rootpoint = TP(self.getPocketOffsetPoint(pocket), pocket, None, 0, [])
+        # nocue is set to true because we dont want the cue ball to be a direct child of pocket (we dont want to scratch)
+        self.calculateTPChildren(rootpoint, nocue=True)
+        return rootpoint
+
+    def getPocketOffsetPoint(self, pocket):
+        # calculating the offset for each pocket root point and returning the new point
+        rad_vec = self.pocket_radius * (1 / 1.414);
+        if(pocket == 'a'):
+            diff_vec = Vector(rad_vec, -rad_vec)
+        elif(pocket == 'b'):
+            diff_vec = Vector(0, -self.pocket_radius)
+        elif(pocket == 'c'):
+            diff_vec = Vector(-rad_vec, -rad_vec)
+        elif(pocket == 'd'):
+            diff_vec = Vector(self.pocket_radius, 0)
+        elif(pocket == 'e'):
+            diff_vec = Vector(-self.pocket_radius, 0)
+        elif(pocket == 'f'):
+            diff_vec = Vector(rad_vec, rad_vec)
+        elif(pocket == 'g'):
+            diff_vec = Vector(0, self.pocket_radius)
+        else:
+            diff_vec = Vector(-rad_vec, rad_vec)
+        return self.pockets[pocket] + diff_vec
+
+    def calculateTPChildren(self, tp, nocue=False):
+        # calculating the child nodes for a given TP node
+        # if the node is cue or has reached max level, we do not need to calculate the children
         if(tp.name == self.cue or tp.level >= self.max_depth):
             return
+
+        # iterating through all the balls
         for ball in self.balls.keys():
-            if(ball not in tp.history):
-                tp.addChild(self.calculateAttackPoint(self.balls[ball], tp.point), ball)
-                self.total_addchild += 1
+            # assumption that the ball shouldn't have been considered already (not present in history)
+            # if nocue is True, we dont consider the cue ball as a child
+            if(ball not in tp.history and not(nocue == True and ball == self.cue)):
+                # calculating the point for direct shot from ball to target
+                cap = self.calculateAPDirect(self.balls[ball], tp.point)
+                # if there is a valid point, then it adds it as a child
+                if(cap != None):
+                    tp.addChild(cap, ball)
+                    self.total_addchild += 1
+
+        # recursively calculate the children for each child node of the current TP node
         for child in tp.children:
             self.calculateTPChildren(child)
 
-    def getPocketTP(self, pocket):
-        diff_vec = Vector(0, 0)
-        if(pocket == 'a'):
-            diff_vec = Vector(self.ball_radius, -self.ball_radius)
-        return self.pockets[pocket] + diff_vec
+    def calculateAPDirect(self, source, target):
+        return self.calculateAttackPoint(source, target)
+
+    def calculateAPBounce(self, source, target):
+        return
 
     def calculateAttackPoint(self, source, target):
         d = target - source
@@ -86,23 +121,37 @@ class PoolTable:
         return atp
 
     def getPaths(self):
+        # to calculate the total paths possible from the pocket roots
         paths = []
         for rootp in self.proots:
+            # we do a DFS from each pocket root TP
+            # we dont need a visit list as the graph is a DAG
             ends = []
             stack = [rootp]
             while(len(stack) > 0):
                 cur = stack.pop(-1)
+                # whenever we encounter a cue node, we know that it is a valid path
+                # so we add that node to the ends list
                 if(cur.name == self.cue):
                     ends.append(cur)
+                # adding the children to the stack
                 for child in cur.children:
                     stack.append(child)
+
+            # now we convert each endpoint TP to a path
             for endpoint in ends:
-                paths.append(self.makePathFromPoints(self.expandToPoints(endpoint)))
+                # first we expand the end TP to a list of points leading all the way to the pocket
+                epoints = self.expandToPoints(endpoint)
+                # we convert the list of points to a list of lines and get the path
+                epath = self.makePathFromPoints(epoints)
+                # add the path to the total paths
+                paths.append(epath)
                 self.total_endps += 1
         print('Total endpoints found:', self.total_endps)
         return paths
 
     def expandToPoints(self, tp):
+        # we expand the end TP to list of points by recursively traversing to the parent till we reach the pocket (whose parent is None)
         cur = tp
         epath = [cur.point]
         while(cur.parent != None):
@@ -111,14 +160,18 @@ class PoolTable:
         return epath
 
     def makePathFromPoints(self, points):
+        # we convert points to lines by taking two points and making a Line object from them
         path = []
         for i in range(len(points) - 1):
             path.append(Line(points[i], points[i + 1]))
+
+        # we then convert the Line object into a list
         for ind, line in enumerate(path):
             path[ind] = line.toList()
         return path
 
     def getLines(self):
+        # to get a list of lines directly
         tpaths = self.getPaths()
         tlines = []
         for path in tpaths:
