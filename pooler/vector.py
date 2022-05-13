@@ -1,16 +1,29 @@
 import math
 
 class Vector:
-    def __init__(self, a, b):
-        self.a = a
-        self.b = b
-        self.mag = math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2)
+    def __init__(self, x, y=None):
+        if(type(x) == list):
+            self.x = x[0]
+            self.y = x[1]
+        else:
+            self.x = x
+            self.y = y
+        self.mag = math.sqrt(self.x**2 + self.y**2)
 
     def __str__(self):
-        return 'Vector[{a} -> {b}]'.format(
-            a = str(self.a),
-            b = str(self.b)
+        return 'Vector({x}, {y})'.format(
+            x = str(round(self.x, 3)),
+            y = str(round(self.y, 3)),
         )
 
-    def toList(self):
-        return [self.a.x, self.a.y, self.b.x, self.b.y]
+    def __add__(self, other):
+        return Vector(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other):
+        return Vector(self.x - other.x, self.y - other.y)
+
+    def __mul__(self, other):
+        return Vector(self.x * other, self.y * other)
+
+    def __truediv__(self, other):
+        return Vector(self.x / other, self.y / other)
