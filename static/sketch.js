@@ -22,9 +22,10 @@ function setup()
         {
             '0': [0, 0],
             '1': [-20, 70],
-            '2': [0, 50],
-            '3': [-100, 80],
-            '4': [20, 40],
+            '12': [0, 50],
+            '3': [-80, 80],
+            '14': [20, 40],
+            '9': [-20, 40],
         },
     };
     let tmp_bdist = fdata['metadata']['pocket_radius'] * (1 / 1.414);
@@ -86,31 +87,6 @@ function draw()
             scircle(pocket[0], pocket[1], 2 * fdata['metadata']['pocket_radius']);
         });
 
-    // drawing the balls
-    for(var ball in fdata['balls'])
-    {
-        if(int(ball) > 8)
-        {
-            fill(colorscheme['ball'][str(int(ball) - 8)]);
-            scircle(fdata['balls'][ball][0], -fdata['balls'][ball][1], 2 * fdata['metadata']['ball_radius']);
-            if(ball == '9')
-                fill('black');
-            else
-                fill('white');
-            scircle(fdata['balls'][ball][0], -fdata['balls'][ball][1], fdata['metadata']['ball_radius']);
-        }
-        else
-        {
-            fill(colorscheme['ball'][ball]);
-            scircle(fdata['balls'][ball][0], -fdata['balls'][ball][1], 2 * fdata['metadata']['ball_radius']);
-            if(ball == '0')
-            {
-                fill('red');
-                scircle(fdata['balls'][ball][0], -fdata['balls'][ball][1], fdata['metadata']['ball_radius'] / 2);
-            }
-        }
-    }
-
     // drawing the paths
     strokeWeight(gscale);
     noFill();
@@ -124,6 +100,66 @@ function draw()
             );
         }
     );
+
+    // drawing the balls
+    textAlign(CENTER, CENTER);
+    textSize(gscale * 6);
+    for(var ball in fdata['balls'])
+    {
+        noStroke();
+        let cbx = fdata['balls'][ball][0];
+        let cby = fdata['balls'][ball][1];
+        let cbr = fdata['metadata']['ball_radius'];
+
+        // primary color
+        let pri_col;
+        if(int(ball) > 8)
+            pri_col = colorscheme['ball'][str(int(ball) - 8)];
+        else
+            pri_col = colorscheme['ball'][ball];
+        // drawing the main circle
+        fill(pri_col);
+        scircle(cbx, -cby, 2 * cbr);
+
+        // secondary color (centre and stripes)
+        // text color
+        let sec_col = 'white';
+        let text_col = 'black';
+        // 9 ball has opposite scheme
+        if(ball == '9')
+        {
+            sec_col = 'black';
+            text_col = 'white';
+        }
+
+        // draw a red dot for cue
+        if(ball == '0')
+        {
+            fill('red');
+            scircle(cbx, -cby, cbr / 2);
+        }
+        // if not cue then draw centre, stripes and text
+        else
+        {
+            // drawing the stripes if the ball is more than 8
+            if(int(ball) > 8)
+            {
+                fill(sec_col);
+                sarc(cbx, -cby, 2 * cbr, 2 * cbr, -(HALF_PI / 2), (HALF_PI / 2));
+                sarc(cbx, -cby, 2 * cbr, 2 * cbr, -(HALF_PI / 2) + PI, (HALF_PI / 2) + PI);
+            }
+
+            // drawing the centre circle to hold text
+            fill(sec_col);
+            scircle(cbx, -cby, 1.1 * cbr);
+
+            // drawing the text
+            fill(text_col);
+            strokeWeight(0.5);
+            stroke(text_col);
+            stext(ball, cbx, -cby);
+        }
+    }
 
     // stopping the loop after receiving data
     if(pathdata.length > 0)
@@ -149,4 +185,14 @@ function srect(x, y, wid, hei)
 function scircle(x, y, dia)
 {
     circle(x * gscale, y * gscale, dia * gscale);
+}
+
+function stext(strtext, x, y)
+{
+    text(strtext, x * gscale, y * gscale);
+}
+
+function sarc(x, y, w, h, start, stop)
+{
+    arc(x * gscale, y * gscale, w * gscale, h * gscale, start, stop, CHORD);
 }
