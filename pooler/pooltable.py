@@ -120,6 +120,8 @@ class PoolTable:
             self.calculateTPChildren(child)
 
     def calculateAPDirect(self, source, target, cpoint):
+        # calculate the attack point before hand
+        atp = self.calculateAttackPoint(source, target)
         # find angle of attack for source and target
         # find angle of attack for source and closest point on the line (target-source) to cpoint
         # this is done because if angfp is less than angtp, it means the shortest point (fp) comes first in the line of attack of target
@@ -130,21 +132,40 @@ class PoolTable:
         # if the cpoint, target and source are on the same line (straight shot), then fp will be cpoint
         if(fp.equals(cpoint)):
             # we then only check if the target is in the LOS (line of sight) of the source wrt to the cpoint ball
-            if(angtp <= 90):
-                return self.calculateAttackPoint(source, target)
-            else:
-                return None
+            # required condition: angtp <= 90
+            # general condition: angfp - angtp >= self.fp_tp_threshold
+            # angtp <= angfp - self.fp_tp_threshold
+            # angfp - self.fp_tp_threshold = 90
+            angfp = self.fp_tp_threshold + 90
         else:
             angfp = Vector.AngleBetween(fp - cpoint, source - cpoint)
-            if(angfp - angtp >= self.fp_tp_threshold):
-                return self.calculateAttackPoint(source, target)
-            else:
-                return None
+        # if shot is physically possible and there are no balls in its way
+        if(angfp - angtp >= self.fp_tp_threshold and not self.checkPathBallCollision(atp, target, source, cpoint)):
+            return atp
+        else:
+            return None
 
-    def getFootOfPerpendicular(self, a, b, c):
+    def checkPathBallCollision(self, a, b, source, target):
+        # finds if there is any ball in the path a->b
+        # exceptions are source and target ball/pocket
+        for cball in self.balls.values():
+            if(not (source.equals(cball) or target.equals(cball))):
+                # get foot of perpendicular of the ball wrt the path, and also the fac
+                fp, fac = self.getFootOfPerpendicular(cball, a, b, getfac=True)
+                # closest distance between path and ball
+                fpdist = (cball - fp).mag
+                # if the ball lies in the path (0 < fac < 1) and the distance is less than the radius (for collision to occur)
+                if(fac > 0 and fac < 1 and fpdist < self.ball_radius):
+                    return True
+        return False
+
+    def getFootOfPerpendicular(self, a, b, c, getfac=False):
         # finds the foot of perpendicular from the line (b->c) to point (a)
         fac = Vector.Dot(a - b, c - b) / (c - b).mag**2
-        return b + (c - b) * fac
+        if(getfac):
+            return b + (c - b) * fac, fac
+        else:
+            return b + (c - b) * fac
 
     def calculateAPBounce(self, source, target):
         return
