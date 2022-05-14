@@ -1,6 +1,7 @@
 from pooler.vector import Vector
 from pooler.line import Line 
 from pooler.targetpoint import TP
+import math
 
 class PoolTable:
     def __init__(self, data):
@@ -33,9 +34,13 @@ class PoolTable:
         # max recursion depth for path finding
         self.max_depth = 3
 
+        # threshold for closest point and target point angle (for possibility of steep shot)
+        self.fp_tp_threshold = 5 # degrees
+
         # counters for logging
         self.total_addchild = 1
         self.total_endps = 0
+        self.total_childrecur = 0
 
     def printTP(self, rootp):
         # for printing the TP tree wrt as cur and child pairs
@@ -55,12 +60,13 @@ class PoolTable:
         for pocket in self.pockets.keys():
             # get the root TP of pocket
             self.proots.append(self.calculateRootForPocket(pocket))
-            break
+        print('Total children recursion checks done:', self.total_childrecur)
         print('Total children calculated:', self.total_addchild)
 
     def calculateRootForPocket(self, pocket):
         # the TP for pocket is not centre but with offset such that the it coincides with the table edge
-        rootpoint = TP(self.getPocketOffsetPoint(pocket), pocket, None, 0, [])
+        # attack point, name, centre point, parent, level, history
+        rootpoint = TP(self.getPocketOffsetPoint(pocket), pocket, self.pockets[pocket], None, 0, [])
         # nocue is set to true because we dont want the cue ball to be a direct child of pocket (we dont want to scratch)
         self.calculateTPChildren(rootpoint, nocue=True)
         return rootpoint
@@ -97,24 +103,54 @@ class PoolTable:
             # assumption that the ball shouldn't have been considered already (not present in history)
             # if nocue is True, we dont consider the cue ball as a child
             if(ball not in tp.history and not(nocue == True and ball == self.cue)):
+
                 # calculating the point for direct shot from ball to target
-                cap = self.calculateAPDirect(self.balls[ball], tp.point)
+                # we use cpoint (the centre for the ball/pocket to estimate the possibility of the shot)
+                # print('Doing:', ball, tp.name, (None if tp.parent == None else tp.parent.name))
+                cap = self.calculateAPDirect(self.balls[ball], tp.point, tp.cpoint)
                 # if there is a valid point, then it adds it as a child
                 if(cap != None):
-                    tp.addChild(cap, ball)
+                    tp.addChild(cap, ball, self.balls[ball])
                     self.total_addchild += 1
+
+                self.total_childrecur += 1
 
         # recursively calculate the children for each child node of the current TP node
         for child in tp.children:
             self.calculateTPChildren(child)
 
-    def calculateAPDirect(self, source, target):
-        return self.calculateAttackPoint(source, target)
+    def calculateAPDirect(self, source, target, cpoint):
+        # find angle of attack for source and target
+        # find angle of attack for source and closest point on the line (target-source) to cpoint
+        # this is done because if angfp is less than angtp, it means the shortest point (fp) comes first in the line of attack of target
+        # this implies it is impossible to hit the target as the ball will strike the fp first before it ever reaches target (dis from target to cpoint is ball_radius)
+        # we use a threshold to ignore very steep shots too
+        angtp = Vector.AngleBetween(target - cpoint, source - cpoint)
+        fp = self.getFootOfPerpendicular(cpoint, source, target)
+        # if the cpoint, target and source are on the same line (straight shot), then fp will be cpoint
+        if(fp.equals(cpoint)):
+            # we then only check if the target is in the LOS (line of sight) of the source wrt to the cpoint ball
+            if(angtp <= 90):
+                return self.calculateAttackPoint(source, target)
+            else:
+                return None
+        else:
+            angfp = Vector.AngleBetween(fp - cpoint, source - cpoint)
+            if(angfp - angtp >= self.fp_tp_threshold):
+                return self.calculateAttackPoint(source, target)
+            else:
+                return None
+
+    def getFootOfPerpendicular(self, a, b, c):
+        # finds the foot of perpendicular from the line (b->c) to point (a)
+        fac = Vector.Dot(a - b, c - b) / (c - b).mag**2
+        return b + (c - b) * fac
 
     def calculateAPBounce(self, source, target):
         return
 
     def calculateAttackPoint(self, source, target):
+        # calculates the attack point on ball (source) towards the target
         d = target - source
         d = d / d.mag
         atp = source + d * (-2 * self.ball_radius)

@@ -27,3 +27,15 @@ class Vector:
 
     def __truediv__(self, other):
         return Vector(self.x / other, self.y / other)
+
+    def equals(self, other):
+        return (self.x == other.x and self.y == other.y)
+
+    @staticmethod
+    def Dot(a, b):
+        return a.x * b.x + a.y * b.y
+
+    @staticmethod
+    def AngleBetween(a, b):
+        return math.degrees(math.acos(Vector.Dot(a / a.mag, b / b.mag)))
+
