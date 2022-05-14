@@ -152,10 +152,12 @@ class PoolTable:
             if(not (source.equals(cball) or target.equals(cball))):
                 # get foot of perpendicular of the ball wrt the path, and also the fac
                 fp, fac = self.getFootOfPerpendicular(cball, a, b, getfac=True)
+                # adding extra radius factor to ensure no collision
+                rfac = self.ball_radius / (b - a).mag
                 # closest distance between path and ball
                 fpdist = (cball - fp).mag
-                # if the ball lies in the path (0 < fac < 1) and the distance is less than the radius (for collision to occur)
-                if(fac > 0 and fac < 1 and fpdist < self.ball_radius):
+                # if the ball lies in the path (0 < fac < 1) (adjusted for radius close collisions using rfac)  and the distance is less than the radius (for collision to occur)
+                if(fac > (0 - rfac) and fac < (1 + rfac) and fpdist < 2 * self.ball_radius):
                     return True
         return False
 
