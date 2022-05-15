@@ -55,7 +55,8 @@ class PoolTable:
         # the root is a DAG that has all the shots for that pocket
         # for choosing the valid shots, we only choose those ending with the cue ball
         self.proots = []
-        for pocket in self.pockets.keys():
+        # for pocket in self.pockets.keys():
+        for pocket in ['c']:
             # get the root TP of pocket
             self.proots.append(self.calculateRootForPocket(pocket))
         print('Total children recursion checks done:', self.total_childrecur)
@@ -102,24 +103,22 @@ class PoolTable:
             # if nocue is True, we dont consider the cue ball as a child
             if(ball not in tp.history and not(nocue == True and ball == self.cue)):
 
-                if(tp.level < self.max_depth):
-                    # calculating the point for direct shot from ball to target
-                    # we use cpoint (the centre for the ball/pocket to estimate the possibility of the shot)
-                    # print('Doing:', ball, tp.name, (None if tp.parent == None else tp.parent.name))
-                    cap = self.calculateAPDirect(self.balls[ball], tp.point, tp.cpoint)
-                    # if there is a valid point, then it adds it as a child
-                    if(cap != None):
-                        tp.addChild(cap, ball, self.balls[ball])
-                        self.total_addchild += 1
-                
-                if(tp.level < self.max_depth - 1):
-                    # calculating the points for bounce shots from ball to target via a wall
-                    # [(atp, extend_point), ..]
-                    cap_ep = self.calculateAPBounce(self.balls[ball], tp.point, tp.cpoint)
-                    # if there are valid points, then it adds them as children
-                    for cap, ep in cap_ep:
-                        tp.addChild(cap, ball, self.balls[ball], ep)
-                        self.total_addchild += 1
+                # calculating the point for direct shot from ball to target
+                # we use cpoint (the centre for the ball/pocket to estimate the possibility of the shot)
+                # print('Doing:', ball, tp.name, (None if tp.parent == None else tp.parent.name))
+                cap = self.calculateAPDirect(self.balls[ball], tp.point, tp.cpoint)
+                # if there is a valid point, then it adds it as a child
+                if(cap != None):
+                    tp.addChild(cap, ball, self.balls[ball])
+                    self.total_addchild += 1
+
+                # calculating the points for bounce shots from ball to target via a wall
+                # [(atp, extend_point), ..]
+                cap_ep = self.calculateAPBounce(self.balls[ball], tp.point, tp.cpoint)
+                # if there are valid points, then it adds them as children
+                for cap, ep in cap_ep:
+                    tp.addChild(cap, ball, self.balls[ball], ep)
+                    self.total_addchild += 1
 
                 self.total_childrecur += 1
 
@@ -130,66 +129,28 @@ class PoolTable:
     def calculateAPDirect(self, source, target, cpoint):
         # calculate the attack point before hand
         atp = self.calculateAttackPoint(source, target)
-        # if shot is physically possible and there are no balls in its way and the attack point is inside the table
-        if(self.checkCanReachTP(source, target, cpoint) and not self.checkPathBallCollision(atp, target, source, cpoint) and self.checkPointInsideTable(atp)):
+        # if shot is physically possible and there are no balls in its way
+        if(self.checkCanReachTP(source, target, cpoint) and not self.checkPathBallCollision(atp, target, source, cpoint)):
+            print('added')
+            print(source, target, cpoint)
+            print(atp)
             return atp
         else:
             return None
 
     def calculateAPBounce(self, source, target, cpoint):
-        atp_ep = []
         # top wall
-        # calculate the mirror end points
-        # we add the ball radius off set because we are tracking the collision wrt the centre of the ball
-        wa = Vector(-(self.table_width / 2), (self.table_height / 2) - self.ball_radius)
-        wb = Vector( (self.table_width / 2), (self.table_height / 2) - self.ball_radius)
-        # if the target is on the correct side of the wall
+        return []
+        atp_ep = []
+        wa = Vector(-self.table_width / 2, (self.table_height / 2) - self.ball_radius)
+        wb = Vector(self.table_width / 2, (self.table_height / 2) - self.ball_radius)
         if(wa.y > target.y):
-            # get the point on the wall for reflection
-            cont = self.getPointOnMirrorForReflection(wa, wb, source, target)
-            # if the shot is physically possible from the wall to the ball and if there are no balls in its way
-            if(self.checkCanReachTP(cont, target, cpoint) and not self.checkPathBallCollision(cont, target, cpoint, cpoint)):
-                # calculate the attack point on the source to the wall
-                atp = self.calculateAttackPoint(source, cont)
-                # if there are no balls in its way and the attack point is inside the table, then this is a valid bounce
-                if(not self.checkPathBallCollision(atp, cont, source, source) and self.checkPointInsideTable(atp)):
-                    atp_ep.append((atp, cont))
-        # left wall
-        wa = Vector(-(self.table_width / 2) + self.ball_radius,  (self.table_height / 2))
-        wb = Vector(-(self.table_width / 2) + self.ball_radius, -(self.table_height / 2))
-        if(wa.x < target.x):
             cont = self.getPointOnMirrorForReflection(wa, wb, source, target)
             if(self.checkCanReachTP(cont, target, cpoint) and not self.checkPathBallCollision(cont, target, cpoint, cpoint)):
                 atp = self.calculateAttackPoint(source, cont)
-                if(not self.checkPathBallCollision(atp, cont, source, source) and self.checkPointInsideTable(atp)):
-                    atp_ep.append((atp, cont))
-        # right wall
-        wa = Vector((self.table_width / 2) - self.ball_radius,  (self.table_height / 2))
-        wb = Vector((self.table_width / 2) - self.ball_radius, -(self.table_height / 2))
-        if(wa.x > target.x):
-            cont = self.getPointOnMirrorForReflection(wa, wb, source, target)
-            if(self.checkCanReachTP(cont, target, cpoint) and not self.checkPathBallCollision(cont, target, cpoint, cpoint)):
-                atp = self.calculateAttackPoint(source, cont)
-                if(not self.checkPathBallCollision(atp, cont, source, source) and self.checkPointInsideTable(atp)):
-                    atp_ep.append((atp, cont))
-        # bottom wall
-        wa = Vector(-(self.table_width / 2), -(self.table_height / 2) + self.ball_radius)
-        wb = Vector( (self.table_width / 2), -(self.table_height / 2) + self.ball_radius)
-        if(wa.y < target.y):
-            cont = self.getPointOnMirrorForReflection(wa, wb, source, target)
-            if(self.checkCanReachTP(cont, target, cpoint) and not self.checkPathBallCollision(cont, target, cpoint, cpoint)):
-                atp = self.calculateAttackPoint(source, cont)
-                if(not self.checkPathBallCollision(atp, cont, source, source) and self.checkPointInsideTable(atp)):
+                if(not self.checkPathBallCollision(atp, cont, source, source)):
                     atp_ep.append((atp, cont))
         return atp_ep
-
-    def checkPointInsideTable(self, a):
-        # checks if point a is inside the table or not
-        if(a.x >= (-(self.table_width / 2) + self.ball_radius) and a.x <= ((self.table_width / 2) - self.ball_radius) and
-           a.y >= (-(self.table_height / 2) + self.ball_radius) and a.y <= ((self.table_height / 2) - self.ball_radius)):
-            return True
-        else:
-            return False
 
     def checkCanReachTP(self, source, target, cpoint):
         # find angle of attack for source and target

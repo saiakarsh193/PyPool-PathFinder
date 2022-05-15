@@ -21,5 +21,10 @@ class TP:
 
     def addChild(self, point, name, cpoint, extend_point=None):
         child = TP(point, name, cpoint, self, self.level + 1, self.history + [name], extend_point)
+        # if there is an extend point, meaning if there is a bounce, then we add a level to it
+        # this is because the bounce is considered as a level
+        # to reduce complex shots from being considered
+        if(extend_point != None):
+            child.level += 1
         self.children.append(child)
 
