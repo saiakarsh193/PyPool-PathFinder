@@ -33,7 +33,7 @@ class PoolTable:
         self.max_depth = 3
 
         # threshold for closest point and target point angle (for possibility of steep shot)
-        self.fp_tp_threshold = 5 # degrees
+        self.fp_tp_threshold = 10 # degrees
 
         # counters for logging
         self.total_addchild = 1
@@ -136,10 +136,9 @@ class PoolTable:
 
     def calculateAPBounce(self, source, target, cpoint):
         # top wall
-        return []
         atp_ep = []
-        wa = Vector(-self.table_width, self.table_height)
-        wb = Vector(self.table_width, self.table_height)
+        wa = Vector(-self.table_width / 2, self.table_height / 2)
+        wb = Vector(self.table_width / 2, self.table_height / 2)
         cont = self.getPointOnMirrorForReflection(wa, wb, source, target)
         cont = cont + Vector(0, -self.ball_radius)
         if(self.checkCanReachTP(cont, target, cpoint) and not self.checkPathBallCollision(cont, target, cpoint, cpoint)):
