@@ -8,6 +8,7 @@ class PoolTable:
         self.pocket_radius = data['metadata']['pocket_radius']
         self.table_width = data['metadata']['table_width']
         self.table_height = data['metadata']['table_height']
+        self.grail_width = data['metadata']['grail_width']
 
         # converting ball points to vectors
         self.balls = data['balls']
@@ -16,12 +17,12 @@ class PoolTable:
 
         # conveting pockets to vectors with ids/names
         # pocket names
-        # a  b  c
+        # a     b
         #
-        # d     e
+        # c     d
         #
-        # f  g  h
-        self.pocket_names = ['a', 'c', 'h', 'f', 'b', 'g', 'e', 'd']
+        # e     f
+        self.pocket_names = ['a', 'b', 'f', 'e', 'd', 'c']
         self.pockets = {}
         for pocket, value in zip(self.pocket_names, data['pockets']):
             self.pockets[pocket] = Vector(value)
@@ -39,16 +40,6 @@ class PoolTable:
         self.total_addchild = 1
         self.total_endps = 0
         self.total_childrecur = 0
-
-    def printTP(self, rootp):
-        # for printing the TP tree wrt as cur and child pairs
-        print('cur:', rootp)
-        print('chilren:')
-        for child in rootp.children:
-            print(child)
-        print()
-        for child in rootp.children:
-            self.printTP(child)
 
     def calculatePaths(self):
         # calculate the root target point for each pocket
@@ -71,21 +62,17 @@ class PoolTable:
 
     def getPocketOffsetPoint(self, pocket):
         # calculating the offset for each pocket root point and returning the new point
-        rad_vec = self.pocket_radius * (1 / 1.414);
+        rad_vec = self.pocket_radius * (1 / 1.414) + self.grail_width;
         if(pocket == 'a'):
             diff_vec = Vector(rad_vec, -rad_vec)
         elif(pocket == 'b'):
-            diff_vec = Vector(0, -self.pocket_radius)
-        elif(pocket == 'c'):
             diff_vec = Vector(-rad_vec, -rad_vec)
+        elif(pocket == 'c'):
+            diff_vec = Vector(self.pocket_radius + self.grail_width, 0)
         elif(pocket == 'd'):
-            diff_vec = Vector(self.pocket_radius, 0)
+            diff_vec = Vector(-self.pocket_radius - self.grail_width, 0)
         elif(pocket == 'e'):
-            diff_vec = Vector(-self.pocket_radius, 0)
-        elif(pocket == 'f'):
             diff_vec = Vector(rad_vec, rad_vec)
-        elif(pocket == 'g'):
-            diff_vec = Vector(0, self.pocket_radius)
         else:
             diff_vec = Vector(-rad_vec, rad_vec)
         return self.pockets[pocket] + diff_vec
