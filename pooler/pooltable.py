@@ -62,7 +62,7 @@ class PoolTable:
 
     def getPocketOffsetPoint(self, pocket):
         # calculating the offset for each pocket root point and returning the new point
-        rad_vec = self.pocket_radius * (1 / 1.414) + self.grail_width;
+        rad_vec = self.pocket_radius * (1 / 1.414) + self.grail_width
         if(pocket == 'a'):
             diff_vec = Vector(rad_vec, -rad_vec)
         elif(pocket == 'b'):
@@ -120,8 +120,7 @@ class PoolTable:
         # if shot is physically possible and there are no balls in its way and the attack point is inside the table
         if(self.checkCanReachTP(source, target, cpoint) and not self.checkPathBallCollision(atp, target, source, cpoint) and self.checkPointInsideTable(atp)):
             return atp
-        else:
-            return None
+        return None
 
     def calculateAPBounce(self, source, target, cpoint):
         atp_ep = []
@@ -172,11 +171,7 @@ class PoolTable:
 
     def checkPointInsideTable(self, a):
         # checks if point a is inside the table or not
-        if(a.x >= (-(self.table_width / 2) + self.ball_radius) and a.x <= ((self.table_width / 2) - self.ball_radius) and
-           a.y >= (-(self.table_height / 2) + self.ball_radius) and a.y <= ((self.table_height / 2) - self.ball_radius)):
-            return True
-        else:
-            return False
+        return (a.x >= (-(self.table_width / 2) + self.ball_radius) and a.x <= ((self.table_width / 2) - self.ball_radius) and a.y >= (-(self.table_height / 2) + self.ball_radius) and a.y <= ((self.table_height / 2) - self.ball_radius))
 
     def checkCanReachTP(self, source, target, cpoint):
         # find angle of attack for source and target
@@ -210,8 +205,7 @@ class PoolTable:
         fac = Vector.Dot(a - b, c - b) / (c - b).mag**2
         if(getfac):
             return b + (c - b) * fac, fac
-        else:
-            return b + (c - b) * fac
+        return b + (c - b) * fac
 
     def getPointOnMirrorForReflection(self, a, b, s, t):
         # if mirror is (a->b) and s lies on the incident ray and t lies on the reflected ray
